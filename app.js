@@ -18,7 +18,8 @@ const state = {
   wordPosition: null,
   timerOn: false,
   wrongWords: 0,
-  wrongLetterPositions: []
+  wrongLetterPositions: [],
+  
 };
 
 //   ================== Configure ==================
@@ -189,72 +190,74 @@ elements.input.addEventListener("keydown", (e) => {
   } 
   
   else if(e.key === "Backspace") {
-
+  
     state.editedLettersArr[
       state.letterPosition
     ] = state.lettersArr[state.letterPosition];
   
     state.letterPosition--
-    forword() 
-    // if(state.wordPosition === null) return;
+    forword() // Makes active
 
-    let thatWordsArr = []
+    let sentenceStructure = []
 
-    let mediumArr= []
+    let currentWord= []
 
     state.lettersArr.forEach((letter, i)=>{
       if(letter != " "){
-        mediumArr.push(i)
+        currentWord.push(i)
       } else {
-        thatWordsArr.push(mediumArr)
-        mediumArr = []
+        sentenceStructure.push(currentWord)
+        currentWord = []
       }
     })
-
+      
     let wasWrongLetter;
 
-    const letterDeletedPosition = state.letterPosition + 1
+    const letterDeletedPosition = state.letterPosition
 
     state.wrongLetterPositions.forEach((letterPostion, i)=>{
       if(letterPostion === letterDeletedPosition){
         wasWrongLetter = true
-        // state.wrongLetterPositions.splice(i, 1)
+        state.wrongLetterPositions.splice(i, 1)
       }
     })
+    
     
 
 
     if (!wasWrongLetter) return;
 
+
     let wrongWordArr;
 
-    thatWordsArr.forEach((insideWordArr)=>{
-      insideWordArr.forEach((letter)=>{
-        
-        
-        if(letter === letterDeletedPosition){
+    sentenceStructure.forEach((insideWordArr)=>{
+      insideWordArr.forEach((letterPosition)=>{
+        if(letterPosition === letterDeletedPosition){
           wrongWordArr = insideWordArr
         }
       })
     })
-   
+  
+    
 
     if (!wrongWordArr) return;
-
+  
+    
     let isAllWrongLettersOfWordDeleted = true
 
 
     wrongWordArr.forEach((letterPostion)=>{
       state.wrongLetterPositions.forEach((wrongLetterPostion, i)=>{
         if (letterPostion === wrongLetterPostion){
+          
           isAllWrongLettersOfWordDeleted = false
         }
       })
 
     })
-
     console.log(isAllWrongLettersOfWordDeleted);
     
+
 
     if(isAllWrongLettersOfWordDeleted){
       state.wrongWords--
