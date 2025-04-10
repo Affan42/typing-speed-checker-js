@@ -1,3 +1,14 @@
+// 
+
+
+
+
+
+
+
+
+// Problem: in middle of a word type space the
+
 const elements = {
   startBtn: document.querySelector(".start"),
   timeElem: document.querySelector(".time span b"),
@@ -5,8 +16,7 @@ const elements = {
   text: document.querySelector(".typing-text p"),
   content_box: document.querySelector(".content-box"),
   result_box: document.querySelector(".result_box"),
-  wpm: document.querySelector(".WPM")
-
+  wpm: document.querySelector(".WPM"),
 };
 // ================== State ==================
 
@@ -19,7 +29,7 @@ const state = {
   timerOn: false,
   wrongWords: 0,
   wrongLetterPositions: [],
-  
+  sentenceStructure: [],
 };
 
 //   ================== Configure ==================
@@ -33,6 +43,7 @@ function setTextsArr() {
   state.text = text;
   state.lettersArr = state.text.split("");
   state.editedLettersArr = state.text.split("");
+
 
 }
 
@@ -51,67 +62,71 @@ function startTimer() {
 
     if (sec <= 0) {
       clearInterval(countDown);
+
       stopGame();
     }
   }, 1000);
 }
 
+// ================== Stop Game ==================
 function stopGame() {
   elements.content_box.classList.add("hide");
   elements.result_box.classList.remove("hide");
-  const WPM = calcWPM()
-  elements.wpm.innerHTML = `WPM: ${WPM}`
+  const WPM = calcWPM();
 
+  elements.wpm.innerHTML = `WPM: ${WPM}`;
 }
 
+// ================== Sentence Structure ==================
+function setSentenceStructure() {
+  let currentWord = [];
+
+  state.lettersArr.forEach((letter, i) => {
+    if (letter != " ") {
+      currentWord.push(i);
+    } else {
+      state.sentenceStructure.push(currentWord);
+      currentWord = [];
+    }
+  });
+}
 // ================== Letter functions ==================
 
 function forword() {
-
-
-
   const currentLetter = state.lettersArr[state.letterPosition];
 
-  
   state.editedLettersArr[
     state.letterPosition
   ] = `<span class="active" >${currentLetter}</span>`;
 
   setText();
-
 }
 
 function letterCheck(keyPressed) {
   let currentLetter = state.lettersArr[state.letterPosition]; // Letter Position was increased by forword
-  
-  
-  
+
+
+
   if (currentLetter === keyPressed) {
+    
     state.editedLettersArr[
       state.letterPosition
     ] = `<span class="correct" >${currentLetter}</span>`;
-
   } else {
     state.editedLettersArr[
       state.letterPosition
     ] = `<span class="incorrect" >${currentLetter}</span>`;
 
-    state.wrongLetterPositions.push(state.letterPosition)
-
-    
-
+    state.wrongLetterPositions.push(state.letterPosition);
   }
   setText();
-  
 }
 // ================== Letter Forword ==================
-function letterIncrement(){
-  if(state.letterPosition === null){
-    state.letterPosition = 0
-  
+function letterIncrement() {
+  if (state.letterPosition === null) {
+    state.letterPosition = 0;
   } else {
-    state.letterPosition++
-    
+    state.letterPosition++;
   }
 }
 
@@ -124,45 +139,103 @@ function wordCheck(typedWord) {
   }
 }
 
-function calcLastWord(){
-    const writtenWordsArr = elements.input.value.split(" ");
-    const lastWord = writtenWordsArr[writtenWordsArr.length - 1];
-    return lastWord
+function calcLastWord() {
+  const writtenWordsArr = elements.input.value.split(" ");
+  const lastWord = writtenWordsArr[writtenWordsArr.length - 1];
+  return lastWord;
 }
 // ================== Word Forword (contains space handle also) ==================
 
-function handleSpace(){
+function handleSpace(keyPressed) {
   let spaceHaventCome = state.lettersArr[state.letterPosition] != " ";
-    
-  do {
-    letterCheck(null)
-    letterIncrement()
-    forword();
-    
-    if (state.lettersArr[state.letterPosition] === " ") {
 
+  do {
+    letterCheck(spaceHaventCome === true? null : " ");
+    letterIncrement();
+    forword();
+
+    if (state.lettersArr[state.letterPosition] === " ") {
       spaceHaventCome = false;
 
-      letterCheck(null)
-      letterIncrement()
+      letterCheck(" ");
+      letterIncrement();
       forword();
-
     }
   } while (spaceHaventCome);
-
 }
-function incrementWord(){
-  if(state.wordPosition === null ){
-    state.wordPosition = 0
+function incrementWord() {
+  if (state.wordPosition === null) {
+    state.wordPosition = 0;
   } else {
-    state.wordPosition++
+    state.wordPosition++;
   }
 }
-// ================== WPM ==================
-function calcWPM(){
-  const WPM = ((state.wordPosition + 1) - state.wrongWords)
+// ================== Backspace ==================
+function handleBackspace() {
+  state.editedLettersArr[state.letterPosition] =
+    state.lettersArr[state.letterPosition];
 
-  return WPM
+  state.letterPosition--;
+  forword(); // Makes active
+
+  let wasWrongLetter = checkWrongLetter();
+
+  if (!wasWrongLetter) return;
+
+  let wrongWordArr = getWrongWordArr();
+
+  if (!wrongWordArr) return;
+
+  let isWrongWordCleared = checkWrongWordCleared(wrongWordArr);
+
+  if (isWrongWordCleared) {
+    state.wrongWords--;
+  }
+}
+
+function checkWrongLetter() {
+  const letterDeletedPosition = state.letterPosition;
+
+  let wasWrongLetter = false;
+
+  state.wrongLetterPositions.forEach((letterPostion, i) => {
+    if (letterPostion === letterDeletedPosition) {
+      state.wrongLetterPositions.splice(i, 1);
+      wasWrongLetter = true;
+    }
+  });
+  return wasWrongLetter;
+}
+function getWrongWordArr() {
+  const letterDeletedPosition = state.letterPosition;
+  let wrongWordArr;
+  state.sentenceStructure.forEach((insideWordArr) => {
+    insideWordArr.forEach((letterPosition) => {
+      if (letterPosition === letterDeletedPosition) {
+        wrongWordArr = insideWordArr;
+      }
+    });
+  });
+  return wrongWordArr;
+}
+function checkWrongWordCleared(wrongWordArr) {
+  let isWrongWordCleared = true;
+  wrongWordArr.forEach((letterPostion) => {
+    state.wrongLetterPositions.forEach((wrongLetterPostion, i) => {
+      if (letterPostion === wrongLetterPostion) {
+        isWrongWordCleared = false;
+      }
+    });
+  });
+  return isWrongWordCleared;
+}
+// ================== WPM ==================
+function calcWPM() {
+  const WPM = Math.round(
+    (state.letterPosition - state.wrongLetterPositions.length) / 5
+  );
+
+  return WPM;
 }
 
 // ================== Event Listeners ==================
@@ -175,124 +248,38 @@ elements.startBtn.addEventListener("click", () => {
 elements.input.addEventListener("keydown", (e) => {
   // if (!state.timerOn) startTimer();
 
-
-
   if (
     e.key === "CapsLock" ||
     e.key === "ArrowLeft" ||
     e.key === "ArrowRight" ||
-    e.key === "ArrowUp" ||
-    e.key === "ArrowDown" ||
     e.key === "Shift" ||
     e.key === "Delete"
   ) {
     return;
-  } 
-  
-  else if(e.key === "Backspace") {
-  
-    state.editedLettersArr[
-      state.letterPosition
-    ] = state.lettersArr[state.letterPosition];
-  
-    state.letterPosition--
-    forword() // Makes active
+  } else if (e.key === "Backspace") {
+    handleBackspace();
+    return;
+  } else if (e.key === " ") {
+    const lastWord = calcLastWord();
 
-    let sentenceStructure = []
-
-    let currentWord= []
-
-    state.lettersArr.forEach((letter, i)=>{
-      if(letter != " "){
-        currentWord.push(i)
-      } else {
-        sentenceStructure.push(currentWord)
-        currentWord = []
-      }
-    })
-      
-    let wasWrongLetter;
-
-    const letterDeletedPosition = state.letterPosition
-
-    state.wrongLetterPositions.forEach((letterPostion, i)=>{
-      if(letterPostion === letterDeletedPosition){
-        wasWrongLetter = true
-        state.wrongLetterPositions.splice(i, 1)
-      }
-    })
-    
-    
-
-
-    if (!wasWrongLetter) return;
-
-
-    let wrongWordArr;
-
-    sentenceStructure.forEach((insideWordArr)=>{
-      insideWordArr.forEach((letterPosition)=>{
-        if(letterPosition === letterDeletedPosition){
-          wrongWordArr = insideWordArr
-        }
-      })
-    })
-  
-    
-
-    if (!wrongWordArr) return;
-  
-    
-    let isAllWrongLettersOfWordDeleted = true
-
-
-    wrongWordArr.forEach((letterPostion)=>{
-      state.wrongLetterPositions.forEach((wrongLetterPostion, i)=>{
-        if (letterPostion === wrongLetterPostion){
-          
-          isAllWrongLettersOfWordDeleted = false
-        }
-      })
-
-    })
-    console.log(isAllWrongLettersOfWordDeleted);
-    
-
-
-    if(isAllWrongLettersOfWordDeleted){
-      state.wrongWords--
-    }
-    
-
-    
-    return
-  }
-  
-  else if (e.key === " ") {
-    const lastWord = calcLastWord()
-
-    incrementWord()
-    handleSpace()
+    incrementWord();
+    handleSpace();
     wordCheck(lastWord);
-    
-    return 
+
+    return;
   }
-  
+
   letterCheck(e.key);
-  letterIncrement()
+  letterIncrement();
   forword();
-  
-  
 });
 
 // ================== On app start ==================
 document.addEventListener("DOMContentLoaded", () => {
   setTextsArr();
-  letterIncrement()
-  forword()
+  setSentenceStructure();
+  letterIncrement();
+  forword();
 
   elements.input.focus();
-
 });
-
-
